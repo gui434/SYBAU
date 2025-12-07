@@ -16,3 +16,12 @@ num_albuns NUMBER;
     BEGIN
         INSERT INTO artista (isni, nome, inicio) VALUES (isni_in, nome_in, inicio_in);
     END regista_artista;
+
+    --método 2
+    PROCEDURE regista_album(
+        ean_in IN album.ean%TYPE, titulo_in IN album.titulo%TYPE, tipo_in IN album.tipo%TYPE, ano_in IN album.ano%TYPE, 
+        artista_in IN album.artista%TYPE, suporte_in IN album.suporte%TYPE, versao_in IN album.versao%TYPE := NULL)
+    IS
+    BEGIN 
+        INSERT INTO album (ean, titulo, tipo, ano, artista, suporte, versao);
+    END regista_album;
