@@ -23,5 +23,8 @@ num_albuns NUMBER;
         artista_in IN album.artista%TYPE, suporte_in IN album.suporte%TYPE, versao_in IN album.versao%TYPE := NULL)
     IS
     BEGIN 
-        INSERT INTO album (ean, titulo, tipo, ano, artista, suporte, versao);
+        INSERT INTO album (ean, titulo, tipo, ano, artista, suporte, versao)
+        VALUES (ean_in, titulo_in, tipo_in, ano_in, artista_in, suporte_in, versao_in);
     END regista_album;
+
+
