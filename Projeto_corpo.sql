@@ -58,6 +58,7 @@ num_albuns NUMBER;
     END regista_utilizador
 
 BEGIN
+    --Caso seja preciso personalizar imenso os as mensagens de erro
    dicionario_erros('ck_artista_isni') := 'ISNI inválido. Deve conter 15 dígitos seguidos de um dígito verificador (0-9 ou X).';
    dicionario_erros('ck_artista_inicio') := 'Ano de início inválido. Deve ser um valor positivo.';
    dicionario_erros('ck_versao_ean') := 'EAN inválido. Deve conter exatamente 13 dígitos.';
