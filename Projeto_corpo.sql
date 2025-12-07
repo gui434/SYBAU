@@ -1,19 +1,25 @@
 CREATE OR REPLACE PACKAGE pkg_colecao IS
 num_albuns NUMBER;
 
+--Defenição de um dicionário de erros temporários:
+    TYPE t_dicionario_erros IS TABLE OF VARCHAR2(100) INDEX BY VARCHAR2(128);
+    dicionario_erros t_dicionario_erros;
+
     --Defenição de funções e procedimentos:
     FUNCTION mensagem_erro (raw_error VARCHAR2, code_error NUMBER) RETURN VARCHAR2 IS
     mensagem VARCHAR2(100);
     BEGIN
         CASE code_error
-            WHEN 1 THEN
-                mensagem := 'Erro de integridade: ' || raw_error;
-            WHEN 1400 THEN
-                mensagem := 'Erro: Valor nulo não permitido. ' || raw_error;
-            WHEN 2291 THEN
-                mensagem := 'Erro: Chave estrangeira violada. ' || raw_error;
-            WHEN 1 THEN
-                mensagem := 'Erro: Violação de chave primária. ' || raw_error;
+            WHEN -1 THEN
+                mensagem := 'Erro: Valor já existe na base de dados e não pode ser duplicado. ';
+            WHEN -1400 THEN
+                mensagem := 'Erro: Valor nulo não permitido. Adicione um valor válido.';
+            WHEN -2290 THEN
+              mensagem := 'Erro: Violação da restrição de verificação.';  
+            WHEN -2291 THEN
+                mensagem := 'Erro: O valor referenciado não existe na tabela pai.';
+            WHEN -2292 THEN
+                mensagem := 'Erro: O valor está a ser referenciado por outra tabela e não pode ser eliminado.';
             ELSE
                 mensagem := 'Erro desconhecido: ' || raw_error;
         END CASE;
@@ -51,3 +57,16 @@ num_albuns NUMBER;
         VALUES (username_in, email_in, senha_in, nascimento_in, artista_in)
     END regista_utilizador
 
+BEGIN
+   dicionario_erros('ck_artista_isni') := 'ISNI inválido. Deve conter 15 dígitos seguidos de um dígito verificador (0-9 ou X).';
+   dicionario_erros('ck_artista_inicio') := 'Ano de início inválido. Deve ser um valor positivo.';
+   dicionario_erros('ck_versao_ean') := 'EAN inválido. Deve conter exatamente 13 dígitos.';
+   dicionario_erros('ck_album_tipo') := 'Tipo de álbum inválido. Deve ser "single", "EP" ou "LP".';
+   dicionario_erros('ck_album_ano') := 'Ano de álbum inválido. Deve ser maior ou igual a 1900.';
+   dicionario_erros('ck_album_suporte') := 'Suporte inválido. Deve ser "CD", "vinil" ou "cassete".';
+   dicionario_erros('ck_utilizador_username') := 'Nome de utilizador inválido, tem de coter apenas letras e números.';
+   dicionario_erros('ck_utilizador_nascimento') := 'Ano de nascimento inválido. Deve ser um valor maior ou igual a 1900 e menor ou igual ao ano atual.';
+   dicionario_erros('ck_possui_desde') := 'Data inválida. Um registo de coleção tem de ser posterior a 1990 e não pode ser no futuro.';
+
+END pkg_colecao;
+/
