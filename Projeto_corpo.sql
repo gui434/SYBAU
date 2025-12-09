@@ -48,7 +48,6 @@ BEGIN
 
         ELSE
             mensagem := 'Erro desconhecido (' || nome_constraint || '). Código: ' || code_error;
-            
     END CASE;
 
     RETURN mensagem;
@@ -70,6 +69,14 @@ BEGIN
         RETURN v_conteudo_full;
     END IF;
 END extrair_identificador;
+
+    --Função que conta o número de álbuns possuídos por um utilizador
+    FUNCTION conta_albuns (utilizador_in IN possui.utilizador%TYPE) RETURN NUMBER IS
+    numero_albuns NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO numero_albuns FROM possui WHERE utilizador = utilizador_in;
+        RETURN numero_albuns;
+    END conta_albuns;
 
 
     PROCEDURE regista_artista(isni_in IN artista.isni%TYPE, nome_in IN artista.nome%TYPE, inicio_in IN artista.inicio%TYPE)
@@ -143,7 +150,31 @@ END extrair_identificador;
             end if;
     END regista_utilizador;
 
-
+    FUNCTION regista_posse (utilizador_in IN possui.utilizador%TYPE, album_in IN possui.album%TYPE, 
+    desde_in IN possui.desde%TYPE := SYSDATE) RETURN NUMBER IS
+    BEGIN
+        IF Extract(year from desde_in) < (SELECT a.ano FROM album a WHERE a.ean = album_in) then --Ria 16
+            RAISE_APPLICATION_ERROR(-20009, 'Erro: A data de posse não pode ser anterior ao ano de lançamento do álbum.');
+        ELSIF desde_in > SYSDATE then 
+            RAISE_APPLICATION_ERROR(-20010, 'Erro: A data de posse não pode ser no futuro.');
+        ELSIF EXTRACT(year FROM desde_in) < ((SELECT u.nascimento FROM utilizador u WHERE u.username = utilizador_in) + 13) then --Ria 17
+            RAISE_APPLICATION_ERROR(-20013, 'Erro: A data de posse não pode ser anterior à data em que o utilizador tem 13 anos.');
+        END IF;
+        INSERT INTO possui(utilizador, album, desde)
+        VALUES (utilizador_in, album_in, desde_in);
+        RETURN conta_albuns(utilizador_in);
+        exception
+            when no_data_found then
+                raise_application_error(-20011,'Erro: O utilizador ou álbum especificado não existe na base de dados.');
+            when dup_val_on_index then
+                raise_application_error(-20011, 'Erro: A posse já existe na base de dados e não pode ser duplicada.');
+            when others then
+                if sqlcode = -20009 OR sqlcode = -20010 then
+                    raise;
+                else
+                    raise_application_error(-20012, mensagem_erro(SQLERRM, SQLCODE));
+                end if;
+    END regista_posse;
 
 END pkg_colecao;
 /
