@@ -75,6 +75,7 @@ END extrair_identificador;
     PROCEDURE regista_artista(isni_in IN artista.isni%TYPE, nome_in IN artista.nome%TYPE, inicio_in IN artista.inicio%TYPE)
     IS
     BEGIN
+        -- Validação do ano de início
         IF inicio_in > EXTRACT(YEAR FROM SYSDATE) THEN
             RAISE_APPLICATION_ERROR(-20000, 'Erro: Ano de início não pode ser no futuro.');
         END IF;
@@ -98,6 +99,7 @@ END extrair_identificador;
         artista_in IN album.artista%TYPE, suporte_in IN album.suporte%TYPE, versao_in IN album.versao%TYPE := NULL)
     IS
     BEGIN 
+        -- Validação do ano do álbum
         IF ano_in < (SELECT a.inicio FROM artista a WHERE a.isni = artista_in) THEN
             RAISE_APPLICATION_ERROR(-20003, 'Erro: Ano do álbum não pode ser anterior ao ano de início de atividade do artista.');
         ELSIF ano_in > EXTRACT(YEAR FROM SYSDATE) THEN
@@ -126,6 +128,7 @@ END extrair_identificador;
     artista_in IN utilizador.artista%TYPE := NULL)
     IS
     BEGIN
+        -- Validação da idade mínima
         if (extract(year from SYSDATE) - nascimento_in) < 13 then
             RAISE_APPLICATION_ERROR(-20006, 'Erro: O utilizador tem de ter pelo menos 13 anos.');
         end if;
@@ -142,8 +145,6 @@ END extrair_identificador;
                 raise_application_error(-20008, mensagem_erro(SQLERRM, SQLCODE));
             end if;
     END regista_utilizador;
-
-
 
 END pkg_colecao;
 /
