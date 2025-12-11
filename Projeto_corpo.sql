@@ -137,19 +137,19 @@ END extrair_identificador;
     BEGIN
         -- Validação da idade mínima
         if (extract(year from SYSDATE) - nascimento_in) < 13 then
-            RAISE_APPLICATION_ERROR(-20006, 'Erro: O utilizador tem de ter pelo menos 13 anos.');
+            RAISE_APPLICATION_ERROR(-20007, 'Erro: O utilizador tem de ter pelo menos 13 anos.');
         end if;
         INSERT INTO utilizador(username, email, senha, nascimento, artista)
         VALUES (username_in, email_in, senha_in, nascimento_in, artista_in);
 
         exception
           when dup_val_on_index then
-            raise_application_error(-20007, mensagem_erro(SQLERRM, SQLCODE));
+            raise_application_error(-20008, mensagem_erro(SQLERRM, SQLCODE));
           when others then
-            if sqlcode = -20006 then
+            if sqlcode = -20007 then
                 raise;
             else
-                raise_application_error(-20008, mensagem_erro(SQLERRM, SQLCODE));
+                raise_application_error(-20009, mensagem_erro(SQLERRM, SQLCODE));
             end if;
     END regista_utilizador;
 
@@ -157,25 +157,25 @@ END extrair_identificador;
     desde_in IN possui.desde%TYPE := SYSDATE) RETURN NUMBER IS
     BEGIN
         IF Extract(year from desde_in) < (SELECT a.ano FROM album a WHERE a.ean = album_in) then --Ria 16
-            RAISE_APPLICATION_ERROR(-20009, 'Erro: A data de posse não pode ser anterior ao ano de lançamento do álbum.');
+            RAISE_APPLICATION_ERROR(-20010, 'Erro: A data de posse não pode ser anterior ao ano de lançamento do álbum.');
         ELSIF desde_in > SYSDATE then 
-            RAISE_APPLICATION_ERROR(-20010, 'Erro: A data de posse não pode ser no futuro.');
+            RAISE_APPLICATION_ERROR(-20011, 'Erro: A data de posse não pode ser no futuro.');
         ELSIF EXTRACT(year FROM desde_in) < ((SELECT u.nascimento FROM utilizador u WHERE u.username = utilizador_in) + 13) then --Ria 17
-            RAISE_APPLICATION_ERROR(-20013, 'Erro: A data de posse não pode ser anterior à data em que o utilizador tem 13 anos.');
+            RAISE_APPLICATION_ERROR(-20012, 'Erro: A data de posse não pode ser anterior à data em que o utilizador tem 13 anos.');
         END IF;
         INSERT INTO possui(utilizador, album, desde)
         VALUES (utilizador_in, album_in, desde_in);
         RETURN conta_albuns(utilizador_in);
         exception
             when no_data_found then
-                raise_application_error(-20011,'Erro: O utilizador ou álbum especificado não existe na base de dados.');
+                raise_application_error(-20013,'Erro: O utilizador ou álbum especificado não existe na base de dados.');
             when dup_val_on_index then
-                raise_application_error(-20011, 'Erro: A posse já existe na base de dados e não pode ser duplicada.');
+                raise_application_error(-20014, 'Erro: A posse já existe na base de dados e não pode ser duplicada.');
             when others then
-                if sqlcode = -20009 OR sqlcode = -20010 then
+                if sqlcode = -20010 OR sqlcode = -20011 OR sqlcode = -20012 then
                     raise;
                 else
-                    raise_application_error(-20012, mensagem_erro(SQLERRM, SQLCODE));
+                    raise_application_error(-20013, mensagem_erro(SQLERRM, SQLCODE));
                 end if;
     END regista_posse;
 
