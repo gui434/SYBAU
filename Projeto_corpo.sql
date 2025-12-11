@@ -48,7 +48,6 @@ BEGIN
 
         ELSE
             mensagem := 'Erro desconhecido (' || nome_constraint || '). Código: ' || code_error;
-            
     END CASE;
 
     RETURN mensagem;
@@ -70,6 +69,14 @@ BEGIN
         RETURN v_conteudo_full;
     END IF;
 END extrair_identificador;
+
+    --Função que conta o número de álbuns possuídos por um utilizador
+    FUNCTION conta_albuns (utilizador_in IN possui.utilizador%TYPE) RETURN NUMBER IS
+    numero_albuns NUMBER;
+    BEGIN
+        SELECT COUNT(*) INTO numero_albuns FROM possui WHERE utilizador = utilizador_in;
+        RETURN numero_albuns;
+    END conta_albuns;
 
 
     PROCEDURE regista_artista(isni_in IN artista.isni%TYPE, nome_in IN artista.nome%TYPE, inicio_in IN artista.inicio%TYPE)
@@ -145,6 +152,8 @@ END extrair_identificador;
                 raise_application_error(-20008, mensagem_erro(SQLERRM, SQLCODE));
             end if;
     END regista_utilizador;
+
+
 
 END pkg_colecao;
 /
