@@ -8,7 +8,7 @@ num_albuns NUMBER;
 
     v_nome_const := REGEXP_SUBSTR(mensagem_in, '\(([^)]+)\)', 1, 1, NULL, 1);
     IF codigo_in IN (-1400, -1407) THEN
-    -- Trata erros de NOT NULL separadamente, pois não têm o formato padrão ('Tabela.Coluna')
+    -- Trata erros de NOT NULL separadamente, pois não têm o formato padrão ('Schema.Tabela.Coluna')
         v_nome_coluna := SUBSTR(v_nome_const, INSTR(v_nome_const, '.', -1) + 1);
         v_nome_coluna := REPLACE(v_nome_coluna, '"', '');
     ELSE
