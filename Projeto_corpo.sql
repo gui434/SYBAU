@@ -1,77 +1,41 @@
 CREATE OR REPLACE PACKAGE BODY pkg_colecao IS
 num_albuns NUMBER;
 
-    --Defenição de funções e procedimentos:
-    FUNCTION extrair_identificador (p_raw_error IN VARCHAR2) RETURN VARCHAR2 IS
-    v_conteudo_full VARCHAR2(256);
-    BEGIN
-    -- Extrai o conteúdo entre parênteses do erro.
-    v_conteudo_full := REGEXP_SUBSTR(p_raw_error, '\(([^)]+)\)', 1, 1, NULL, 1);
-    
-    -- Remove aspas duplas, se existirem.
-    v_conteudo_full := REPLACE(v_conteudo_full, '"', '');
+   FUNCTION mensagem_erro(mensagem_in IN VARCHAR2, codigo_in IN NUMBER) RETURN VARCHAR2 IS
+    v_nome_const VARCHAR2(100);
+    v_nome_coluna VARCHAR2(100);
+   BEGIN
 
-    -- Separa o nome do constraint 
-    IF INSTR(v_conteudo_full, '.') > 0 THEN
-        RETURN SUBSTR(v_conteudo_full, INSTR(v_conteudo_full, '.', -1) + 1);
+    v_nome_const := REGEXP_SUBSTR(mensagem_in, '\(([^)]+)\)', 1, 1, NULL, 1);
+    IF codigo_in IN (-1400, -1407) THEN
+    -- Trata erros de NOT NULL separadamente, pois não têm o formato padrão ('Tabela.Coluna')
+        v_nome_coluna := SUBSTR(v_nome_const, INSTR(v_nome_const, '.', -1) + 1);
+        v_nome_coluna := REPLACE(v_nome_coluna, '"', '');
     ELSE
-        RETURN v_conteudo_full;
-    END IF;
-    END extrair_identificador;
+    -- Remove o schema se vier junto (ex: HR.fk_album_ean -> fk_album_ean)
+        IF INSTR(v_nome_const, '.') > 0 THEN
+        v_nome_const := SUBSTR(v_nome_const, INSTR(v_nome_const, '.') + 1);
+        END IF;
 
-
-
-    FUNCTION mensagem_erro (raw_error IN VARCHAR2, code_error IN NUMBER) RETURN VARCHAR2 IS
-    nome_constraints VARCHAR2(128); -- Ex: PK_CLIENTE_ID
-    nome_coluna VARCHAR2(128); -- Ex: CLIENTE_ID (sem o prefixo)
-    mensagem VARCHAR2(4000);
-    BEGIN
-    -- Extrai o nome do constraint do erro original
-    nome_constraints := extrair_identificador(raw_error);
-
-    -- Se não encontrou nada entre parênteses, devolve o erro original
-    IF nome_constraints IS NULL THEN
-        RETURN 'Erro de Sistema (' || code_error || '): ' || raw_error;
+    -- Extrai o nome da coluna apartir do constraint (ex: fk_album_ean -> ean)
+        v_nome_coluna := SUBSTR(v_nome_const, INSTR(v_nome_const, '_', 1, 2) + 1);
     END IF;
 
-    -- Remove o prefixo do nome do constraint
-    nome_coluna := REGEXP_SUBSTR(nome_constraints, '_(.+)', 1, 1, NULL, 1);
-    
-    -- Para o caso dos erros -1400 e -1407, onde a formatação segue o padrão TABLE.COLUMN
-    IF nome_coluna IS NULL THEN 
-        nome_coluna := nome_constraints; 
-    END IF;
-
-    -- Os erros -1400 e -1407 têm uma formatação diferente dos restantes.
-    IF code_error IN (-1400, -1407) THEN
-        RETURN 'Campo obrigatório: O campo ' || nome_coluna || ' não pode ficar vazio.';
-    END IF;
-
-    -- Erros tratados com base no nome do constraint
-    CASE 
-        WHEN LOWER(nome_constraints) LIKE 'ck_%' THEN
-            mensagem := 'Erro: O valor de ' || nome_coluna || ' não segue a restrição contratual';
-
-        WHEN LOWER(nome_constraints) LIKE 'fk_%' THEN
-            IF code_error = -2291 THEN
-                mensagem := 'Erro: O ' || nome_coluna || ' indicado não existe na base de dados.';
-            ELSE
-                mensagem := 'Erro: O registo ' || nome_coluna || ' está a ser usado por uma ou mais tabelas e não pode ser apagado.';
-            END IF;
-
-        WHEN LOWER(nome_constraints) LIKE 'pk_%' THEN
-            mensagem := 'Duplicação: O registo ' || nome_coluna || ' já existe e não pode ser duplicado.';
-
-        WHEN LOWER(nome_constraints) LIKE 'un_%' OR LOWER(nome_constraints) LIKE 'uk_%' THEN
-            mensagem := 'Duplicação: O valor de ' || nome_coluna || ' já existe no sistema.';
-
+    CASE codigo_in
+        WHEN -1 THEN
+            RETURN 'Erro: ' || v_nome_coluna || ' já existe na base de dados e não pode ser duplicado.';
+        WHEN -2290 THEN
+            RETURN 'Erro: ' || v_nome_coluna || ' não cumpre a restrição contratual';
+        WHEN -2291 THEN
+            RETURN 'Erro: O valor de ' || v_nome_coluna || ' não existe na base de dados.';
+        WHEN -2292 THEN
+            RETURN 'Erro: O valor de ' || v_nome_coluna || ' está a ser referenciado por uma ou mais tabelas e não pode ser removido.';
+        WHEN -1400 THEN
+            RETURN 'Erro: ' || v_nome_coluna || ' não pode ser nulo.';
         ELSE
-            mensagem := 'Erro desconhecido (' || nome_constraints || '). Código: ' || code_error;
+            RETURN 'Erro desconhecido: ' || mensagem_in || ' (Código: ' || codigo_in || ')';
     END CASE;
-
-        RETURN mensagem;
     END mensagem_erro;
-
 
 
     --Função que conta o número de álbuns possuídos por um utilizador
