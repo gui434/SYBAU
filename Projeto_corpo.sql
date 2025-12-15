@@ -11,6 +11,7 @@ num_albuns NUMBER;
     -- Trata erros de NOT NULL separadamente, pois não têm o formato padrão ('Schema.Tabela.Coluna')
         v_nome_coluna := SUBSTR(v_nome_const, INSTR(v_nome_const, '.', -1) + 1);
         v_nome_coluna := REPLACE(v_nome_coluna, '"', '');
+        RETURN 'Erro: ' || v_nome_coluna || ' não pode ser nulo.';
     ELSE
     -- Remove o schema se vier junto (ex: HR.fk_album_ean -> fk_album_ean)
         IF INSTR(v_nome_const, '.') > 0 THEN
@@ -30,8 +31,6 @@ num_albuns NUMBER;
             RETURN 'Erro: O valor de ' || v_nome_coluna || ' não existe na base de dados.';
         WHEN -2292 THEN
             RETURN 'Erro: O valor de ' || v_nome_coluna || ' está a ser referenciado por uma ou mais tabelas e não pode ser removido.';
-        WHEN -1400 THEN
-            RETURN 'Erro: ' || v_nome_coluna || ' não pode ser nulo.';
         ELSE
             RETURN 'Erro desconhecido: ' || mensagem_in || ' (Código: ' || codigo_in || ')';
     END CASE;
